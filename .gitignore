@@ -21,3 +21,4 @@ dist-ssr
 *.sln
 *.sw?
 .env
+backend/firebase-admin-sdk.json
