@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #2C2C2C;
+    background-color: #FDFBF7;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+
+  ::selection {
+    background-color: #6B1D1D;
+    color: white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#6B1D1D] text-white px-6 py-3 rounded-lg font-semibold text-sm tracking-wide hover:bg-[#4A1212] transition-all duration-300 shadow-md hover:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-[#6B1D1D] text-[#6B1D1D] px-6 py-3 rounded-lg font-semibold text-sm tracking-wide hover:bg-[#6B1D1D] hover:text-white transition-all duration-300;
+  }
+}
+
+@layer utilities {
+  .font-accent {
+    font-family: 'Cinzel', serif;
+  }
+
+  .font-heading {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .font-body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .text-gold {
+    color: #C4A35A;
+  }
+
+  .bg-gold {
+    background-color: #C4A35A;
+  }
+
+  .border-gold {
+    border-color: #C4A35A;
+  }
+
+  .text-maroon {
+    color: #6B1D1D;
+  }
+
+  .bg-maroon {
+    background-color: #6B1D1D;
+  }
+
+  .bg-cream {
+    background-color: #F7F2E8;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F7F2E8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4C5A9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6B1D1D;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animation classes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
