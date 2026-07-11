@@ -6,11 +6,30 @@ import { DividerLine } from './IndianMotifs';
 
 export function Navbar() {
   const { page, navigate, cartCount, wishlistCount, searchQuery, setSearchQuery } = useApp();
+  const [localQuery, setLocalQuery] = useState(searchQuery);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Sync localQuery when searchQuery changes (e.g. on clear filters)
+  useEffect(() => {
+    setLocalQuery(searchQuery);
+  }, [searchQuery]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localQuery !== searchQuery) {
+        setSearchQuery(localQuery);
+        if (localQuery.trim() !== '' && page !== 'shop') {
+          navigate('shop');
+        }
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localQuery, searchQuery, setSearchQuery, page, navigate]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -24,6 +43,19 @@ export function Navbar() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  const handleSearchSubmit = () => {
+    setSearchQuery(localQuery);
+    if (page !== 'shop') {
+      navigate('shop');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  };
 
   const navItems = [
     { label: 'MEN', category: 'men' },
@@ -80,7 +112,32 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              <div ref={searchRef} className="relative">
+              {/* Desktop Search Input (md and larger) */}
+              <div className="hidden md:flex items-center gap-2 bg-[#F7F2E8] border border-transparent focus-within:border-[#C4A35A]/50 rounded-lg px-3 py-1.5 w-60 lg:w-72 transition-all duration-300">
+                <Search size={16} className="text-[#6B6560] flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search for sarees, paithani, peshwai..."
+                  value={localQuery}
+                  onChange={(e) => setLocalQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="bg-transparent text-xs w-full outline-none text-[#2C2C2C] placeholder:text-[#6B6560]/60"
+                />
+                {localQuery && (
+                  <button
+                    onClick={() => {
+                      setLocalQuery('');
+                      setSearchQuery('');
+                    }}
+                    className="p-0.5 hover:bg-gray-200/50 rounded-full transition-colors flex-shrink-0"
+                  >
+                    <X size={14} className="text-[#6B6560]" />
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile Search Dropdown (below md) */}
+              <div ref={searchRef} className="relative md:hidden">
                 <button
                   onClick={() => setSearchOpen(!searchOpen)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -90,17 +147,24 @@ export function Navbar() {
                 {searchOpen && (
                   <div className="absolute right-0 top-full mt-2 w-72 sm:w-96 bg-white rounded-xl shadow-lg border border-gray-100 p-3 z-50">
                     <div className="flex items-center gap-2 bg-[#F7F2E8] rounded-lg px-3 py-2">
-                      <Search size={16} className="text-[#6B6560]" />
+                      <Search size={16} className="text-[#6B6560] flex-shrink-0" />
                       <input
                         type="text"
-                        placeholder="Search products, brands..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-transparent text-sm w-full outline-none text-[#2C2C2C]"
+                        placeholder="Search for sarees, paithani, peshwai..."
+                        value={localQuery}
+                        onChange={(e) => setLocalQuery(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="bg-transparent text-sm w-full outline-none text-[#2C2C2C] placeholder:text-[#6B6560]/60"
                         autoFocus
                       />
-                      {searchQuery && (
-                        <button onClick={() => setSearchQuery('')}>
+                      {localQuery && (
+                        <button
+                          onClick={() => {
+                            setLocalQuery('');
+                            setSearchQuery('');
+                          }}
+                          className="flex-shrink-0"
+                        >
                           <X size={14} className="text-[#6B6560]" />
                         </button>
                       )}
@@ -112,6 +176,7 @@ export function Navbar() {
                           <button
                             key={term}
                             onClick={() => {
+                              setLocalQuery(term);
                               setSearchQuery(term);
                               navigate('shop');
                               setSearchOpen(false);

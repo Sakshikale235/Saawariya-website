@@ -10,14 +10,14 @@ from api.reviews_views import ReviewsByProductView
 from api.payments_views import CreateRazorpayOrderView, VerifyRazorpayPaymentView, RazorpayWebhookView
 from api.product_image_views import ProductImageUploadView
 
-from api.views import FirestoreTestView, HealthView
+from api.views import SupabaseTestView, HealthView
 from api.wishlist_views import WishlistAddView, WishlistRemoveView, WishlistView
 
 
 
 urlpatterns = [
     path('api/health/', HealthView.as_view(), name='health'),
-    path('api/firestore-test/', FirestoreTestView.as_view(), name='firestore-test'),
+    path('api/supabase-test/', SupabaseTestView.as_view(), name='supabase-test'),
     path('api/profile/', ProfileView.as_view(), name='profile'),
     path('api/addresses/', AddressesView.as_view(), name='addresses'),
     path('api/addresses/<str:id>/', AddressDetailView.as_view(), name='address-detail'),

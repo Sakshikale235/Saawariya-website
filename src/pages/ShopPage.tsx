@@ -31,15 +31,15 @@ export function ShopPage() {
   const filtered = useMemo(() => {
     let result = [...products];
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+    if (searchQuery && searchQuery.trim() !== '') {
+      const q = searchQuery.trim().toLowerCase();
       result = result.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.subcategory.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q))
+          (p.name && p.name.toLowerCase().includes(q)) ||
+          (p.description && p.description.toLowerCase().includes(q)) ||
+          (p.category && p.category.toLowerCase().includes(q)) ||
+          (p.subcategory && p.subcategory.toLowerCase().includes(q)) ||
+          (Array.isArray(p.tags) && p.tags.some((t) => t && t.toLowerCase().includes(q)))
       );
     }
 
@@ -270,7 +270,7 @@ export function ShopPage() {
             {filtered.length === 0 ? (
               <div className="text-center py-20">
                 <Filter size={48} className="text-[#D4C5A9] mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-[#2C2C2C] mb-2">No products found</h3>
+                <h3 className="text-lg font-semibold text-[#2C2C2C] mb-2">No products found.</h3>
                 <p className="text-sm text-[#6B6560] mb-4">Try adjusting your filters or search query</p>
                 <button
                   onClick={clearFilters}

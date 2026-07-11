@@ -1,14 +1,12 @@
-import imghdr
+import io
+from PIL import Image
 from datetime import datetime
 
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.apps import _initialize_firebase_app
-from api.permissions import IsAdminFirebaseUser
-
-from firebase_admin import storage, firestore
+from api.db import get_supabase_client
+from api.permissions import IsAdminSupabaseUser
 
 
 ALLOWED_CONTENT_TYPES = {
@@ -17,7 +15,8 @@ ALLOWED_CONTENT_TYPES = {
     'image/webp': 'webp',
 }
 
-MAX_BYTES = 5 * 1024 * 1024  # 5MB
+MAX_BYTES = 5 * 1024 * 1024  # 5 MB
+BUCKET_NAME = 'product-images'
 
 
 def _get_uid(request):
@@ -25,11 +24,14 @@ def _get_uid(request):
 
 
 def _guess_extension_from_bytes(data: bytes) -> str | None:
-    # imghdr is limited; still useful as a fallback.
-    kind = imghdr.what(None, h=data)
-    if not kind:
+    try:
+        img = Image.open(io.BytesIO(data))
+        fmt = (img.format or "").lower()
+        if fmt == "jpeg":
+            return "jpg"
+        return fmt
+    except Exception:
         return None
-    return kind
 
 
 class ProductImageUploadView(APIView):
@@ -38,14 +40,14 @@ class ProductImageUploadView(APIView):
     POST /api/products/<id>/image/
     multipart/form-data: field name 'image'
 
-    Saves download URL to products/<id>.image_url
+    Saves a signed URL (1 hour expiry) to products.image_url.
+    Create the Supabase Storage bucket named 'product-images' before use.
     """
 
-    permission_classes = [IsAdminFirebaseUser]
+    permission_classes = [IsAdminSupabaseUser]
 
     def post(self, request, id: str):
-        _initialize_firebase_app()
-        db = firestore.client()
+        supabase = get_supabase_client()
 
         file_obj = request.FILES.get('image')
         if not file_obj:
@@ -59,8 +61,6 @@ class ProductImageUploadView(APIView):
         if len(data) > MAX_BYTES:
             return Response({'error': 'File too large (max 5MB)'}, status=400)
 
-        # Minimal type validation using header sniffing.
-        # If it fails, reject.
         guessed = _guess_extension_from_bytes(data)
         expected_ext = ALLOWED_CONTENT_TYPES[content_type]
         if guessed and guessed != expected_ext:
@@ -68,26 +68,32 @@ class ProductImageUploadView(APIView):
         if not guessed:
             return Response({'error': 'Invalid image'}, status=400)
 
-        ext = expected_ext
-        uid = _get_uid(request) or 'unknown'
-
-        bucket = storage.bucket()
-        object_name = f'products/{id}/{uid}_{int(datetime.utcnow().timestamp())}.{ext}'
-        blob = bucket.blob(object_name)
-
-        blob.upload_from_string(data, content_type=content_type)
-
-        # Public download URL if bucket allows, otherwise this returns a signed URL.
-        # Minimal approach: generate a signed URL for safety.
-        # Note: users should ensure the bucket rules allow signed URLs.
-        image_url = blob.generate_signed_url(expiration=3600, method='GET')
-
-        # Save to product doc
-        doc_ref = db.collection('products').document(id)
-        if not doc_ref.get().exists:
+        # Verify product exists
+        check = supabase.table('products').select('id').eq('id', id).execute()
+        if not check.data:
             return Response({'error': 'Not found'}, status=404)
 
-        doc_ref.set({'image_url': image_url, 'updatedAt': datetime.utcnow().isoformat() + 'Z'}, merge=True)
+        uid = _get_uid(request) or 'unknown'
+        ext = expected_ext
+        object_name = f'products/{id}/{uid}_{int(datetime.utcnow().timestamp())}.{ext}'
+
+        bucket = supabase.storage.from_(BUCKET_NAME)
+
+        # Upload image bytes
+        bucket.upload(
+            path=object_name,
+            file=data,
+            file_options={"content-type": content_type, "upsert": "true"},
+        )
+
+        # Generate a signed URL valid for 1 hour (3600 seconds)
+        signed = bucket.create_signed_url(object_name, expires_in=3600)
+        image_url = signed.get('signedURL') or signed.get('signedUrl') or signed.get('signed_url')
+
+        # Persist URL on the product row
+        supabase.table('products').update({
+            'image_url': image_url,
+            'updated_at': datetime.utcnow().isoformat() + 'Z',
+        }).eq('id', id).execute()
 
         return Response({'uploaded': True, 'image_url': image_url}, status=201)
-

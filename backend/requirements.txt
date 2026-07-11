@@ -1,8 +1,7 @@
 Django>=5.0,<7
 djangorestframework>=3.14
 django-cors-headers>=4.0
-firebase-admin>=6.0
-google-auth>=2.0
+supabase>=2.3.0
+PyJWT>=2.6.0
 razorpay>=2.0.0
-
-
+Pillow>=10.0.0

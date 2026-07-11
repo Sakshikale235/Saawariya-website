@@ -4,48 +4,33 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.apps import _initialize_firebase_app
-
-from firebase_admin import firestore
+from api.db import get_supabase_client
+from api.permissions import IsAdminSupabaseUser
 
 
 def _get_uid(request) -> str | None:
     return request.user.get('uid') if hasattr(request, 'user') else None
 
 
-from api.permissions import IsAdminFirebaseUser
-
-
 class ProductsView(APIView):
-    permission_classes = [IsAdminFirebaseUser]
 
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return [IsAdminFirebaseUser()]
-
-
-
-
-
+        return [IsAdminSupabaseUser()]
 
     def get(self, request):
         """GET /api/products/
 
-        Supports query filters (Firestore-friendly):
-        - search: substring match on `name` or `title` (client-side fallback)
-        - category: exact match on `category`
-        - min_price / max_price: numeric range on `price`
+        Supports query filters:
+        - search: substring match on `name` or `title` (client-side)
+        - category: exact match
+        - min_price / max_price: numeric range
         - size: array-contains on `sizes`
         - color: array-contains on `colors`
         - sort: asc|desc by `price`
-
-        Note: Firestore limitations apply (range + array filters may require indexes).
         """
-        _initialize_firebase_app()
-        db = firestore.client()
-
-        q = db.collection('products')
+        supabase = get_supabase_client()
 
         params = request.query_params or {}
         search = (params.get('search') or '').strip().lower()
@@ -56,116 +41,105 @@ class ProductsView(APIView):
         color = (params.get('color') or '').strip()
         sort = (params.get('sort') or '').strip().lower()
 
-        if category:
-            q = q.where('category', '==', category)
+        query = supabase.table('products').select('*')
 
-        # Range on price
+        if category:
+            query = query.eq('category', category)
+
         if min_price is not None and min_price != '':
             try:
-                q = q.where('price', '>=', float(min_price))
+                query = query.gte('price', float(min_price))
             except Exception:
                 pass
+
         if max_price is not None and max_price != '':
             try:
-                q = q.where('price', '<=', float(max_price))
+                query = query.lte('price', float(max_price))
             except Exception:
                 pass
 
-        # Array contains
+        # PostgreSQL array containment for TEXT[] columns
         if size:
-            q = q.where('sizes', 'array_contains', size)
+            query = query.contains('sizes', [size])
         if color:
-            q = q.where('colors', 'array_contains', color)
+            query = query.contains('colors', [color])
 
         if sort in ['asc', 'desc']:
-            q = q.order_by('price', direction=firestore.Query.DESCENDING if sort == 'desc' else firestore.Query.ASCENDING)
+            query = query.order('price', desc=(sort == 'desc'))
         else:
-            q = q.limit(200)
+            query = query.limit(200)
 
-        docs = q.stream()
-        items = []
-        for doc in docs:
-            data = doc.to_dict() or {}
-            data['id'] = doc.id
+        res = query.execute()
+        items = res.data or []
 
-            if search:
-                name = (data.get('name') or data.get('title') or '').lower()
-                if search not in name:
-                    continue
-
-            items.append(data)
+        # Client-side substring search (no full-text index needed)
+        if search:
+            items = [
+                i for i in items
+                if search in (i.get('name') or i.get('title') or '').lower()
+            ]
 
         return Response({'items': items, 'count': len(items)})
 
-
     def post(self, request):
-        """POST /api/products/ - create document in `products` collection."""
-        _initialize_firebase_app()
-        db = firestore.client()
+        """POST /api/products/ - create a row in the `products` table."""
+        supabase = get_supabase_client()
 
-        payload = request.data or {}
+        payload = dict(request.data or {})
         created_by = _get_uid(request)
         if created_by:
-            payload.setdefault('createdBy', created_by)
+            payload.setdefault('created_by', created_by)
 
-        payload.setdefault('createdAt', datetime.utcnow().isoformat() + 'Z')
+        payload.setdefault('created_at', datetime.utcnow().isoformat() + 'Z')
+        # Ensure arrays default to empty lists for postgres TEXT[] columns
+        payload.setdefault('sizes', [])
+        payload.setdefault('colors', [])
 
-        doc_ref = db.collection('products').document()
-        doc_ref.set(payload)
-
-        return Response({'id': doc_ref.id, 'data': payload}, status=201)
+        res = supabase.table('products').insert(payload).execute()
+        row = res.data[0] if res.data else payload
+        return Response({'id': row.get('id'), 'data': row}, status=201)
 
 
 class ProductDetailView(APIView):
-    permission_classes = [IsAdminFirebaseUser]
 
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        return super().get_permissions()
-
+        return [IsAdminSupabaseUser()]
 
     def get(self, request, id: str):
+        """GET /api/products/{id}/"""
+        supabase = get_supabase_client()
 
-        """GET /api/products/{id}/ - fetch a single document."""
-        _initialize_firebase_app()
-        db = firestore.client()
-
-        doc_ref = db.collection('products').document(id)
-        snap = doc_ref.get()
-        if not snap.exists:
+        res = supabase.table('products').select('*').eq('id', id).execute()
+        if not res.data:
             return Response({'error': 'Not found'}, status=404)
 
-        data = snap.to_dict() or {}
-        data['id'] = snap.id
-        return Response({'data': data})
+        return Response({'data': res.data[0]})
 
     def put(self, request, id: str):
-        """PUT /api/products/{id}/ - replace document fields."""
-        _initialize_firebase_app()
-        db = firestore.client()
+        """PUT /api/products/{id}/ - replace product fields."""
+        supabase = get_supabase_client()
 
-        payload = request.data or {}
-
-        doc_ref = db.collection('products').document(id)
-        if not doc_ref.get().exists:
+        # Verify existence first
+        check = supabase.table('products').select('id').eq('id', id).execute()
+        if not check.data:
             return Response({'error': 'Not found'}, status=404)
 
-        payload.setdefault('updatedAt', datetime.utcnow().isoformat() + 'Z')
+        payload = dict(request.data or {})
+        payload['updated_at'] = datetime.utcnow().isoformat() + 'Z'
 
-        doc_ref.set(payload)
-        return Response({'id': id, 'data': payload})
+        res = supabase.table('products').update(payload).eq('id', id).execute()
+        row = res.data[0] if res.data else payload
+        return Response({'id': id, 'data': row})
 
     def delete(self, request, id: str):
-        """DELETE /api/products/{id}/ - delete a document."""
-        _initialize_firebase_app()
-        db = firestore.client()
+        """DELETE /api/products/{id}/"""
+        supabase = get_supabase_client()
 
-        doc_ref = db.collection('products').document(id)
-        snap = doc_ref.get()
-        if not snap.exists:
+        check = supabase.table('products').select('id').eq('id', id).execute()
+        if not check.data:
             return Response({'error': 'Not found'}, status=404)
 
-        doc_ref.delete()
+        supabase.table('products').delete().eq('id', id).execute()
         return Response({'deleted': True, 'id': id}, status=204)
-

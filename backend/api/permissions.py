@@ -2,8 +2,6 @@ from typing import Any
 
 from rest_framework.permissions import BasePermission
 
-from api.apps import _initialize_firebase_app
-
 
 def _get_uid_from_request(request) -> str | None:
     user = getattr(request, "user", None)
@@ -13,7 +11,7 @@ def _get_uid_from_request(request) -> str | None:
 
 
 def _get_decoded_claims(request) -> dict[str, Any]:
-    # FirebaseAuthentication returns (user_dict, decoded_claims).
+    # SupabaseAuthentication returns (user_dict, decoded_claims).
     # DRF stores `user_dict` in request.user and `decoded_claims` in request.auth.
     claims = getattr(request, "auth", None)
     if isinstance(claims, dict):
@@ -28,27 +26,32 @@ def _get_decoded_claims(request) -> dict[str, Any]:
 
 
 def _is_admin_claims(claims: dict[str, Any]) -> bool:
-    # Common custom-claim patterns:
-    # - {"admin": true}
-    # - {"roles": ["admin", ...]}
-    if claims.get("admin") is True:
+    # Check Supabase app_metadata role (set via Supabase dashboard or SQL):
+    #   UPDATE auth.users SET raw_app_meta_data = '{"role":"admin"}' WHERE id = '<uid>';
+    app_metadata = claims.get('app_metadata') or {}
+    if app_metadata.get('role') == 'admin':
         return True
 
-    roles = claims.get("roles") or []
-    if isinstance(roles, list) and "admin" in roles:
+    # Legacy fallback: honour old-style custom claims already in token.
+    if claims.get('admin') is True:
+        return True
+
+    roles = claims.get('roles') or []
+    if isinstance(roles, list) and 'admin' in roles:
         return True
 
     return False
 
 
-class IsAdminFirebaseUser(BasePermission):
-    """Allow only Firebase users with admin custom claim (or roles)."""
+class IsAdminSupabaseUser(BasePermission):
+    """Allow only Supabase users whose JWT carries an admin role in app_metadata."""
 
     message = "Admin privileges required."
 
     def has_permission(self, request, view) -> bool:
-        _initialize_firebase_app()
         claims = _get_decoded_claims(request)
         return _is_admin_claims(claims)
 
 
+# Backwards-compatible alias (used in existing view imports)
+IsAdminFirebaseUser = IsAdminSupabaseUser
