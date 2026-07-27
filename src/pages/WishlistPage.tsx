@@ -4,6 +4,8 @@ import { DividerLine } from '../components/IndianMotifs';
 
 export function WishlistPage() {
   const { wishlist, removeFromWishlist, addToCart, navigate } = useApp();
+  console.log('[WishlistPage] render', { wishlistLen: wishlist.length });
+
 
   if (wishlist.length === 0) {
     return (

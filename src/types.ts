@@ -19,6 +19,8 @@ export interface Product {
   care: string;
   fit: string;
   origin: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Category {
@@ -40,7 +42,20 @@ export interface WishlistItem {
   addedAt: Date;
 }
 
-export type Page = 'home' | 'shop' | 'product' | 'cart' | 'wishlist' | 'loading';
+export type Page =
+  | 'home'
+  | 'shop'
+  | 'product'
+  | 'cart'
+  | 'wishlist'
+  | 'profile'
+  | 'login'
+  | 'signup'
+  | 'forgot_password'
+  | 'reset_password'
+  | 'email_verification'
+  | 'addresses'
+  | 'loading';
 
 export interface AppState {
   page: Page;

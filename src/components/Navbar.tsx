@@ -192,7 +192,10 @@ export function Navbar() {
                 )}
               </div>
 
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block">
+              <button
+                onClick={() => navigate('profile')}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block"
+              >
                 <User size={20} className="text-[#2C2C2C]" />
               </button>
 

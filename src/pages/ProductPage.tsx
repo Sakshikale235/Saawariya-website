@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Heart,
   ShoppingBag,
@@ -13,13 +13,17 @@ import {
   Info,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { getProductById, products } from '../data/products';
+import { fetchProductById, fetchProductsByCategory } from '../api/products';
 import { ProductCard } from '../components/ProductCard';
 import { DividerLine } from '../components/IndianMotifs';
+import type { Product } from '../types';
 
 export function ProductPage() {
   const { productId, navigate, addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useApp();
-  const product = getProductById(productId || '');
+  const [product, setProduct] = useState<Product | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [related, setRelated] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -27,7 +31,85 @@ export function ProductPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'care' | 'reviews'>('details');
 
-  if (!product) {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setNotFound(false);
+        setSelectedImage(0);
+        setSelectedSize('');
+        setSelectedColor('');
+        setQuantity(1);
+
+        const id = productId ?? '';
+        if (!id) {
+          if (!cancelled) setNotFound(true);
+          return;
+        }
+
+        const fetched = await fetchProductById(id);
+        if (cancelled) return;
+
+        if (!fetched) {
+          setNotFound(true);
+          return;
+        }
+
+        setProduct(fetched);
+
+        // Load related products
+        const catProducts = await fetchProductsByCategory(fetched.category);
+        if (!cancelled) {
+          setRelated(catProducts.filter((p) => p.id !== fetched.id).slice(0, 4));
+        }
+      } catch (err) {
+        console.error('[ProductPage] Failed to load product:', err);
+        if (!cancelled) setNotFound(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="bg-[#F7F2E8] py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="h-4 bg-[#E8DFD0] rounded w-64 animate-pulse" />
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+            <div className="space-y-4">
+              <div className="aspect-[3/4] rounded-xl bg-[#F7F2E8] animate-pulse" />
+              <div className="flex gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="w-20 h-24 rounded-lg bg-[#F7F2E8] animate-pulse" />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="h-4 bg-[#E8DFD0] rounded w-1/3 animate-pulse" />
+              <div className="h-8 bg-[#E8DFD0] rounded w-3/4 animate-pulse" />
+              <div className="h-4 bg-[#E8DFD0] rounded w-1/2 animate-pulse" />
+              <div className="h-10 bg-[#E8DFD0] rounded w-1/3 animate-pulse" />
+              <div className="h-6 bg-[#E8DFD0] rounded w-1/4 animate-pulse" />
+              <div className="h-12 bg-[#E8DFD0] rounded w-full animate-pulse" />
+              <div className="h-12 bg-[#E8DFD0] rounded w-full animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !product) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -45,7 +127,6 @@ export function ProductPage() {
 
   const inWishlist = isInWishlist(product.id);
   const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
-  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   const handleAddToCart = () => {
     const size = selectedSize || product.sizes[0];

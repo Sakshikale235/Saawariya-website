@@ -1,19 +1,55 @@
+import { useEffect, useState } from 'react';
 import { ShoppingBag, Star, Truck, RotateCcw, Shield, CreditCard, IndianRupee, Heart } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HeroSection } from '../components/HeroSection';
+import { categories } from '../data/categories';
 import { ProductCard } from '../components/ProductCard';
 import { DividerLine } from '../components/IndianMotifs';
-import { categories, getFeaturedProducts, getBestsellers } from '../data/products';
-import { useState } from 'react';
+// import { categories } from '../data/products';
+import { fetchFeaturedProducts, fetchBestsellers } from '../api/products';
+import type { Product } from '../types';
 
 export function HomePage() {
   const { navigate } = useApp();
+  const [featured, setFeatured] = useState<Product[]>([]);
+  const [bestsellers, setBestsellers] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
-  const featured = getFeaturedProducts();
-  const bestsellers = getBestsellers();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [featuredData, bestsellersData] = await Promise.all([
+          fetchFeaturedProducts(),
+          fetchBestsellers(),
+        ]);
+
+        if (!cancelled) {
+          setFeatured(featuredData);
+          setBestsellers(bestsellersData);
+        }
+      } catch (err) {
+        console.error('[HomePage] Failed to load products:', err);
+        if (!cancelled) {
+          setError('Unable to load products right now. Please try again later.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   const categoryIcons: Record<string, string> = {
-    men: 'Shirt', women: 'Dress', kids: 'Baby', home: 'Home', accessories: 'Gem', collections: 'Sparkles',
+    men: 'Shirt', women: 'Dress', collections: 'Sparkles',
   };
 
   const iconSvgs: Record<string, React.ReactNode> = {
@@ -27,16 +63,16 @@ export function HomePage() {
         <path d="M12 2l-3 5h6l-3-5zM8 7L4 20h16l-4-13h-8z" />
       </svg>
     ),
-    Baby: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
-        <circle cx="12" cy="8" r="4" /><path d="M12 12v4M8 16h8" />
-      </svg>
-    ),
-    Home: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-      </svg>
-    ),
+    // Baby: (
+    //   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+    //     <circle cx="12" cy="8" r="4" /><path d="M12 12v4M8 16h8" />
+    //   </svg>
+    // ),
+    // Home: (
+    //   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+    //     <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+    //   </svg>
+    // ),
     Gem: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
         <path d="M12 2L2 12l10 10 10-10L12 2z" />
@@ -105,53 +141,121 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Best Picks for You
-              </h3>
-              <DividerLine className="justify-start" />
+      {error ? (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+            <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Welcome to Saawariya
+            </h3>
+            <DividerLine />
+            <p className="mt-6 text-[#6B6560] text-sm">{error}</p>
+          </div>
+        </section>
+      ) : loading ? (
+        <>
+          <section className="py-16 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Best Picks for You
+                  </h3>
+                  <DividerLine className="justify-start" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="rounded-xl overflow-hidden bg-[#F7F2E8] animate-pulse">
+                    <div className="aspect-[3/4] bg-[#E8DFD0]" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-3 bg-[#E8DFD0] rounded w-1/3" />
+                      <div className="h-4 bg-[#E8DFD0] rounded w-2/3" />
+                      <div className="h-3 bg-[#E8DFD0] rounded w-1/4" />
+                      <div className="h-5 bg-[#E8DFD0] rounded w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <button
-              onClick={() => navigate('shop')}
-              className="text-sm font-medium text-[#6B1D1D] hover:text-[#4A1212] transition-colors flex items-center gap-1"
-            >
-              View All <ChevronRight size={16} />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {bestsellers.slice(0, 4).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="py-16 bg-[#F7F2E8]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Featured Collection
-              </h3>
-              <DividerLine className="justify-start" />
+          <section className="py-16 bg-[#F7F2E8]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Featured Collection
+                  </h3>
+                  <DividerLine className="justify-start" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="rounded-xl overflow-hidden bg-white animate-pulse">
+                    <div className="aspect-[3/4] bg-[#E8DFD0]" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-3 bg-[#E8DFD0] rounded w-1/3" />
+                      <div className="h-4 bg-[#E8DFD0] rounded w-2/3" />
+                      <div className="h-3 bg-[#E8DFD0] rounded w-1/4" />
+                      <div className="h-5 bg-[#E8DFD0] rounded w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <button
-              onClick={() => navigate('shop')}
-              className="text-sm font-medium text-[#6B1D1D] hover:text-[#4A1212] transition-colors flex items-center gap-1"
-            >
-              View All <ChevronRight size={16} />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {featured.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
+          </section>
+        </>
+      ) : (
+        <>
+          <section className="py-16 bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Best Picks for You
+                  </h3>
+                  <DividerLine className="justify-start" />
+                </div>
+                <button
+                  onClick={() => navigate('shop')}
+                  className="text-sm font-medium text-[#6B1D1D] hover:text-[#4A1212] transition-colors flex items-center gap-1"
+                >
+                  View All <ChevronRight size={16} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {bestsellers.slice(0, 4).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="py-16 bg-[#F7F2E8]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Featured Collection
+                  </h3>
+                  <DividerLine className="justify-start" />
+                </div>
+                <button
+                  onClick={() => navigate('shop')}
+                  className="text-sm font-medium text-[#6B1D1D] hover:text-[#4A1212] transition-colors flex items-center gap-1"
+                >
+                  View All <ChevronRight size={16} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {featured.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -176,7 +280,7 @@ export function HomePage() {
             <div className="relative rounded-2xl overflow-hidden">
               <img src="/Picture4.png" alt="Home" className="w-full h-80 object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8">
-                <div>
+                {/* <div>
                   <p className="text-[#C4A35A] text-sm font-medium tracking-wider mb-2 uppercase">Home Decor</p>
                   <h3 className="text-white text-2xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
                     Sacred & Beautiful
@@ -187,7 +291,7 @@ export function HomePage() {
                   >
                     Explore Home
                   </button>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

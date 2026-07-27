@@ -4,6 +4,8 @@ import { DividerLine } from '../components/IndianMotifs';
 
 export function CartPage() {
   const { cart, cartTotal, cartCount, removeFromCart, updateCartQuantity, navigate } = useApp();
+  console.log('[CartPage] render', { cartLen: cart.length, cartCount });
+
   const shipping = cartTotal >= 999 ? 0 : 99;
   const discount = Math.floor(cartTotal * 0.05);
   const total = cartTotal + shipping - discount;
