@@ -1,24 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Heart, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Search, Heart, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { categories } from '../data/products';
+import { useSupabaseAuth } from "../context/SupabaseAuthContext";
 import { DividerLine } from './IndianMotifs';
 
 export function Navbar() {
   const { page, navigate, cartCount, wishlistCount, searchQuery, setSearchQuery } = useApp();
+  const { session, loading } = useSupabaseAuth();
   const [localQuery, setLocalQuery] = useState(searchQuery);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [catOpen, setCatOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Sync localQuery when searchQuery changes (e.g. on clear filters)
   useEffect(() => {
     setLocalQuery(searchQuery);
   }, [searchQuery]);
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localQuery !== searchQuery) {
@@ -58,11 +56,8 @@ export function Navbar() {
   };
 
   const navItems = [
-    { label: 'MEN', category: 'men' },
-    { label: 'WOMEN', category: 'women' },
-    { label: 'KIDS', category: 'kids' },
-    { label: 'HOME & LIVING', category: 'home' },
-    { label: 'ACCESSORIES', category: 'accessories' },
+    { label: 'MEN', category: 'Men' },
+    { label: 'WOMEN', category: 'Women' },
     { label: 'COLLECTIONS', category: 'collections' },
   ];
 
@@ -103,7 +98,7 @@ export function Navbar() {
                   key={item.category}
                   onClick={() => navigate('shop', undefined, item.category)}
                   className={`px-3 py-2 text-xs font-medium tracking-wider transition-colors duration-300 hover:text-[#6B1D1D] ${
-                    page === 'shop' && searchQuery === '' && item.category === '?' ? 'text-[#6B1D1D]' : 'text-[#2C2C2C]'
+                    page === 'shop' && searchQuery === '' ? 'text-[#6B1D1D]' : 'text-[#2C2C2C]'
                   }`}
                 >
                   {item.label}
@@ -112,7 +107,6 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* Desktop Search Input (md and larger) */}
               <div className="hidden md:flex items-center gap-2 bg-[#F7F2E8] border border-transparent focus-within:border-[#C4A35A]/50 rounded-lg px-3 py-1.5 w-60 lg:w-72 transition-all duration-300">
                 <Search size={16} className="text-[#6B6560] flex-shrink-0" />
                 <input
@@ -125,10 +119,7 @@ export function Navbar() {
                 />
                 {localQuery && (
                   <button
-                    onClick={() => {
-                      setLocalQuery('');
-                      setSearchQuery('');
-                    }}
+                    onClick={() => { setLocalQuery(''); setSearchQuery(''); }}
                     className="p-0.5 hover:bg-gray-200/50 rounded-full transition-colors flex-shrink-0"
                   >
                     <X size={14} className="text-[#6B6560]" />
@@ -136,7 +127,6 @@ export function Navbar() {
                 )}
               </div>
 
-              {/* Mobile Search Dropdown (below md) */}
               <div ref={searchRef} className="relative md:hidden">
                 <button
                   onClick={() => setSearchOpen(!searchOpen)}
@@ -159,10 +149,7 @@ export function Navbar() {
                       />
                       {localQuery && (
                         <button
-                          onClick={() => {
-                            setLocalQuery('');
-                            setSearchQuery('');
-                          }}
+                          onClick={() => { setLocalQuery(''); setSearchQuery(''); }}
                           className="flex-shrink-0"
                         >
                           <X size={14} className="text-[#6B6560]" />
@@ -172,15 +159,10 @@ export function Navbar() {
                     <div className="mt-2">
                       <p className="text-xs text-[#6B6560] uppercase tracking-wider mb-2 px-1">Popular Searches</p>
                       <div className="flex flex-wrap gap-1.5">
-                        {['Saree', 'Kurta', 'Diya', 'Bag', 'Kids'].map((term) => (
+                        {['Saree', 'Kurta'].map((term) => (
                           <button
                             key={term}
-                            onClick={() => {
-                              setLocalQuery(term);
-                              setSearchQuery(term);
-                              navigate('shop');
-                              setSearchOpen(false);
-                            }}
+                            onClick={() => { setLocalQuery(term); setSearchQuery(term); navigate('shop'); setSearchOpen(false); }}
                             className="text-xs px-3 py-1.5 bg-[#F7F2E8] rounded-full text-[#2C2C2C] hover:bg-[#6B1D1D] hover:text-white transition-colors"
                           >
                             {term}
@@ -193,8 +175,9 @@ export function Navbar() {
               </div>
 
               <button
-                onClick={() => navigate('profile')}
+                onClick={() => { if (loading) return; navigate('profile'); }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block"
+                aria-label="Profile"
               >
                 <User size={20} className="text-[#2C2C2C]" />
               </button>
@@ -224,46 +207,43 @@ export function Navbar() {
               </button>
             </div>
           </div>
-        </div>
 
-        <div className="lg:hidden" ref={menuRef}>
-          {menuOpen && (
-            <div className="border-t border-gray-100 bg-white shadow-lg">
-              <div className="px-4 py-3 space-y-1">
-                {navItems.map((item) => (
+          <div className="lg:hidden" ref={menuRef}>
+            {menuOpen && (
+              <div className="border-t border-gray-100 bg-white shadow-lg">
+                <div className="px-4 py-3 space-y-1">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.category}
+                      onClick={() => { navigate('shop', undefined, item.category); setMenuOpen(false); }}
+                      className="block w-full text-left px-3 py-2.5 text-sm text-[#2C2C2C] hover:bg-[#F7F2E8] rounded-lg transition-colors"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  <DividerLine className="py-3" />
                   <button
-                    key={item.category}
-                    onClick={() => {
-                      navigate('shop', undefined, item.category);
-                      setMenuOpen(false);
-                    }}
+                    onClick={() => { navigate('profile'); setMenuOpen(false); }}
                     className="block w-full text-left px-3 py-2.5 text-sm text-[#2C2C2C] hover:bg-[#F7F2E8] rounded-lg transition-colors"
                   >
-                    {item.label}
+                    My Profile
                   </button>
-                ))}
-                <DividerLine className="py-3" />
-                <button
-                  onClick={() => {
-                    navigate('wishlist');
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2.5 text-sm text-[#2C2C2C] hover:bg-[#F7F2E8] rounded-lg transition-colors"
-                >
-                  My Wishlist
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('cart');
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2.5 text-sm text-[#2C2C2C] hover:bg-[#F7F2E8] rounded-lg transition-colors"
-                >
-                  My Cart
-                </button>
+                  <button
+                    onClick={() => { navigate('wishlist'); setMenuOpen(false); }}
+                    className="block w-full text-left px-3 py-2.5 text-sm text-[#2C2C2C] hover:bg-[#F7F2E8] rounded-lg transition-colors"
+                  >
+                    My Wishlist
+                  </button>
+                  <button
+                    onClick={() => { navigate('cart'); setMenuOpen(false); }}
+                    className="block w-full text-left px-3 py-2.5 text-sm text-[#2C2C2C] hover:bg-[#F7F2E8] rounded-lg transition-colors"
+                  >
+                    My Cart
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </nav>
     </>
