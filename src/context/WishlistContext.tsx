@@ -25,7 +25,6 @@ import {
   wishlistCount,
   removeCartVariant as supabaseRemoveCartVariant,
 } from '../api/wishlist';
-// import { getProductById } from '../data/products';
 
 type WishlistContextType = {
   wishlist: WishlistItem[];

@@ -5,7 +5,6 @@ import { HeroSection } from '../components/HeroSection';
 import { categories } from '../data/categories';
 import { ProductCard } from '../components/ProductCard';
 import { DividerLine } from '../components/IndianMotifs';
-// import { categories } from '../data/products';
 import { fetchFeaturedProducts, fetchBestsellers } from '../api/products';
 import type { Product } from '../types';
 

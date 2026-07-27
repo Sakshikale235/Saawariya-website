@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Filter, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ProductCard } from '../components/ProductCard';
 import { DividerLine } from '../components/IndianMotifs';
-import { products, categories } from '../data/products';
+import { fetchProducts } from '../api/products';
+import type { Product } from '../types';
 
 export function ShopPage() {
   const { categoryFilter, searchQuery, setSearchQuery } = useApp();
@@ -15,21 +16,61 @@ export function ShopPage() {
   );
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (categoryFilter) {
+      setSelectedCategories([categoryFilter]);
+    } else {
+      setSelectedCategories([]);
+    }
+  }, [categoryFilter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const fetched = await fetchProducts();
+        if (!cancelled) {
+          setAllProducts(fetched);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError('Failed to load products.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const categoryList = useMemo(() => {
+    const set = new Set<string>();
+    allProducts.forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set).sort();
+  }, [allProducts]);
 
   const allColors = useMemo(() => {
     const set = new Set<string>();
-    products.forEach((p) => p.colors.forEach((c) => set.add(c)));
+    allProducts.forEach((p) => p.colors.forEach((c) => set.add(c)));
     return Array.from(set);
-  }, []);
+  }, [allProducts]);
 
   const allSizes = useMemo(() => {
     const set = new Set<string>();
-    products.forEach((p) => p.sizes.forEach((s) => set.add(s)));
+    allProducts.forEach((p) => p.sizes.forEach((s) => set.add(s)));
     return Array.from(set);
-  }, []);
+  }, [allProducts]);
 
   const filtered = useMemo(() => {
-    let result = [...products];
+    let result = [...allProducts];
 
     if (searchQuery && searchQuery.trim() !== '') {
       const q = searchQuery.trim().toLowerCase();
@@ -68,14 +109,18 @@ export function ShopPage() {
         result.sort((a, b) => b.rating - a.rating);
         break;
       case 'newest':
-        result.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+            result.sort(
+              (a,b)=>
+                new Date(b.created_at).getTime()-
+                new Date(a.created_at).getTime()
+            );
         break;
       default:
         break;
     }
 
     return result;
-  }, [searchQuery, selectedCategories, selectedColors, selectedSizes, priceRange, sortBy]);
+  }, [searchQuery, selectedCategories, selectedColors, selectedSizes, priceRange, sortBy, allProducts]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategories((prev) =>
@@ -105,6 +150,22 @@ export function ShopPage() {
 
   const activeFiltersCount =
     selectedCategories.length + selectedColors.length + selectedSizes.length + (searchQuery ? 1 : 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#6B1D1D]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-[#6B6560]">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -148,6 +209,7 @@ export function ShopPage() {
               </button>
             )}
           </div>
+
           <div className="relative">
             <select
               value={sortBy}
@@ -171,16 +233,16 @@ export function ShopPage() {
                 <div>
                   <h4 className="text-sm font-semibold text-[#2C2C2C] mb-3 uppercase tracking-wider">Categories</h4>
                   <div className="space-y-2">
-                    {categories.map((cat) => (
-                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
+                    {categoryList.map((cat) => (
+                      <label key={cat} className="flex items-center gap-2 cursor-pointer group">
                         <div
                           className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                            selectedCategories.includes(cat.id)
+                            selectedCategories.includes(cat)
                               ? 'bg-[#6B1D1D] border-[#6B1D1D]'
                               : 'border-gray-300 group-hover:border-[#6B1D1D]'
                           }`}
                         >
-                          {selectedCategories.includes(cat.id) && (
+                          {selectedCategories.includes(cat) && (
                             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                               <path d="M1 5l3 3 5-6" stroke="white" strokeWidth="1.5" />
                             </svg>
@@ -189,11 +251,11 @@ export function ShopPage() {
                         <input
                           type="checkbox"
                           className="hidden"
-                          checked={selectedCategories.includes(cat.id)}
-                          onChange={() => toggleCategory(cat.id)}
+                          checked={selectedCategories.includes(cat)}
+                          onChange={() => toggleCategory(cat)}
                         />
                         <span className="text-sm text-[#6B6560] group-hover:text-[#2C2C2C] transition-colors">
-                          {cat.name}
+                          {cat}
                         </span>
                       </label>
                     ))}
