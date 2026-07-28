@@ -22,7 +22,9 @@ urlpatterns = [
     path('api/addresses/', AddressesView.as_view(), name='addresses'),
     path('api/addresses/<str:id>/', AddressDetailView.as_view(), name='address-detail'),
     path('api/products/', ProductsView.as_view(), name='products'),
-
+    # NOTE: the image upload route MUST come before <str:id>/ so Django does
+    # not swallow the literal word "image" as a product ID.
+    path('api/products/<str:id>/image/', ProductImageUploadView.as_view(), name='product-image-upload'),
     path('api/products/<str:id>/', ProductDetailView.as_view(), name='product-detail'),
     path('api/wishlist/', WishlistView.as_view(), name='wishlist'),
     path('api/wishlist/add/', WishlistAddView.as_view(), name='wishlist-add'),
@@ -42,8 +44,6 @@ urlpatterns = [
     path('api/payments/create-order/', CreateRazorpayOrderView.as_view(), name='payments-create-order'),
     path('api/payments/verify/', VerifyRazorpayPaymentView.as_view(), name='payments-verify'),
     path('api/payments/webhook/', RazorpayWebhookView.as_view(), name='payments-webhook'),
-
-    path('api/products/<str:id>/image/', ProductImageUploadView.as_view(), name='product-image-upload'),
 ]
 
 
