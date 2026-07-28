@@ -96,8 +96,8 @@ export function HomePage() {
             </h3>
             <DividerLine />
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6">
-            {categories.map((cat) => (
+<div className="grid grid-cols-3 gap-4 sm:gap-6">
+            {categories.filter(cat => cat.id === 'men' || cat.id === 'women' || cat.id === 'collections').map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => navigate('shop', undefined, cat.id)}
