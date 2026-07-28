@@ -5,7 +5,6 @@ import { HeroSection } from '../components/HeroSection';
 import { categories } from '../data/categories';
 import { ProductCard } from '../components/ProductCard';
 import { DividerLine } from '../components/IndianMotifs';
-// import { categories } from '../data/products';
 import { fetchFeaturedProducts, fetchBestsellers } from '../api/products';
 import type { Product } from '../types';
 
@@ -97,8 +96,8 @@ export function HomePage() {
             </h3>
             <DividerLine />
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6">
-            {categories.map((cat) => (
+<div className="grid grid-cols-3 gap-4 sm:gap-6">
+            {categories.filter(cat => cat.id === 'men' || cat.id === 'women' || cat.id === 'collections').map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => navigate('shop', undefined, cat.id)}

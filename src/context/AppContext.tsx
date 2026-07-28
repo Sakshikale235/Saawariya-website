@@ -20,7 +20,6 @@ import {
   clearCart as clearCartSupabase,
 } from '../api/wishlist';
 
-// import { getProductById } from '../data/products';
 
 interface AppContextType {
   page: Page;
