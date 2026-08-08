@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
@@ -15,6 +14,8 @@ import {
   LogOut, 
   ChevronDown 
 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { useNavigate } from "react-router-dom"; 
 import { useSupabaseAuth } from '../../context/SupabaseAuthContext';
 
 interface AdminLayoutProps {
@@ -43,25 +44,25 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
   }, []);
 
   const menuItems = [
-    { label: 'Dashboard', page: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Products', page: '/admin/products', icon: Package },
-    { label: 'Categories', page: '/admin/categories', icon: Tags },
-    { label: 'Orders', page: '/admin/orders', icon: ClipboardList },
-    { label: 'Hero Banners', page: '/admin/hero-banners', icon: ImageIcon },
-    { label: 'Homepage Management', page: '/admin/homepage', icon: Layers },
-    { label: 'Users', page: '/admin/users', icon: Users },
-    { label: 'Settings', page: '/admin/settings', icon: SettingsIcon },
+    { label: 'Dashboard', page: 'admin/dashboard', icon: LayoutDashboard },
+    { label: 'Products', page: 'admin/products', icon: Package },
+    { label: 'Categories', page: 'admin/categories', icon: Tags },
+    { label: 'Orders', page: 'admin/orders', icon: ClipboardList },
+    { label: 'Hero Banners', page: 'admin/hero-banners', icon: ImageIcon },
+    { label: 'Homepage Management', page: 'admin/homepage', icon: Layers },
+    { label: 'Users', page: 'admin/users', icon: Users },
+    { label: 'Settings', page: 'admin/settings', icon: SettingsIcon },
   ];
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/');
-    } catch (err) {
-      console.error('Logout error:', err);
-      navigate('/');
-    }
-  };
+   const handleLogout = async () => {
+  try {
+    await logout();
+    navigate('/', { replace: true });
+  } catch (err) {
+    console.error('Logout error:', err);
+    navigate('/', { replace: true });
+  }
+};
 
   const getPageTitle = () => {
     const activeItem = menuItems.find(item => item.page === activePage);
@@ -98,7 +99,7 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
             return (
               <button
                 key={item.page}
-                onClick={() => navigate(item.page)}
+                onClick={() => navigate(`/${item.page}`)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                   isActive
                     ? 'bg-[#6B1D1D] text-[#FDFBF7] border-l-4 border-[#C4A35A]'
@@ -170,9 +171,9 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
                   <button
                     key={item.page}
                     onClick={() => {
-                      navigate(item.page);
+                      navigate(`/${item.page}`);
                       setSidebarOpen(false);
-                    }}
+                    }}  
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                       isActive
                         ? 'bg-[#6B1D1D] text-[#FDFBF7] border-l-4 border-[#C4A35A]'
