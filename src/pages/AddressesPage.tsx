@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Edit2, Trash2, Plus, MapPin, Loader2 } from 'lucide-react';
-
+import { useNavigate } from "react-router-dom";
 import { useApp } from '../context/AppContext';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 import { supabase } from '../supabaseClient';
@@ -66,7 +66,8 @@ const emptyForm: FormState = {
 };
 
 export function AddressesPage() {
-  const { navigate } = useApp();
+
+  const navigate = useNavigate();
   const { session, loading: authLoading } = useSupabaseAuth();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -115,7 +116,7 @@ export function AddressesPage() {
     if (authLoading) return;
     if (!session) {
       // Keep behavior consistent with other pages: if no session, route to home.
-      navigate('home');
+      navigate('/');
       return;
     }
     void load();

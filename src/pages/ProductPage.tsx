@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Heart,
   ShoppingBag,
@@ -19,7 +20,9 @@ import { DividerLine } from '../components/IndianMotifs';
 import type { Product } from '../types';
 
 export function ProductPage() {
-  const { productId, navigate, addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useApp();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useApp();
   const [product, setProduct] = useState<Product | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [related, setRelated] = useState<Product[]>([]);
@@ -43,13 +46,13 @@ export function ProductPage() {
         setSelectedColor('');
         setQuantity(1);
 
-        const id = productId ?? '';
-        if (!id) {
+        const productId = id ?? '';
+        if (!productId) {
           if (!cancelled) setNotFound(true);
           return;
         }
 
-        const fetched = await fetchProductById(id);
+        const fetched = await fetchProductById(productId);
         if (cancelled) return;
 
         if (!fetched) {
@@ -73,8 +76,10 @@ export function ProductPage() {
     }
 
     load();
-    return () => { cancelled = true; };
-  }, [productId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   if (loading) {
     return (
@@ -115,7 +120,7 @@ export function ProductPage() {
         <div className="text-center">
           <h2 className="text-xl font-semibold text-[#2C2C2C] mb-2">Product not found</h2>
           <button
-            onClick={() => navigate('shop')}
+            onClick={() => navigate('/shop')}
             className="text-[#6B1D1D] text-sm font-medium hover:underline"
           >
             Back to Shop
@@ -140,7 +145,7 @@ export function ProductPage() {
     const size = selectedSize || product.sizes[0];
     const color = selectedColor || product.colors[0];
     addToCart(product, size, color, quantity);
-    navigate('cart');
+    navigate('/cart');
   };
 
   return (
@@ -148,15 +153,15 @@ export function ProductPage() {
       <div className="bg-[#F7F2E8] py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-2 text-sm text-[#6B6560]">
-            <button onClick={() => navigate('home')} className="hover:text-[#6B1D1D] transition-colors">
+            <button onClick={() => navigate('/')} className="hover:text-[#6B1D1D] transition-colors">
               Home
             </button>
             <span>/</span>
-            <button onClick={() => navigate('shop', undefined, product.category)} className="hover:text-[#6B1D1D] transition-colors capitalize">
+            <button onClick={() => navigate('/shop')} className="hover:text-[#6B1D1D] transition-colors capitalize">
               {product.category}
             </button>
             <span>/</span>
-            <button onClick={() => navigate('shop')} className="hover:text-[#6B1D1D] transition-colors">
+            <button onClick={() => navigate('/shop')} className="hover:text-[#6B1D1D] transition-colors">
               {product.subcategory}
             </button>
             <span>/</span>
@@ -167,6 +172,7 @@ export function ProductPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Image gallery */}
           <div className="space-y-4">
             <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-[#F7F2E8]">
               <img
@@ -207,6 +213,7 @@ export function ProductPage() {
             </div>
           </div>
 
+          {/* Product info */}
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -242,7 +249,9 @@ export function ProductPage() {
 
             {product.colors.length > 1 && (
               <div>
-                <p className="text-sm font-semibold text-[#2C2C2C] mb-2">Color: <span className="font-normal text-[#6B6560]">{selectedColor || product.colors[0]}</span></p>
+                <p className="text-sm font-semibold text-[#2C2C2C] mb-2">
+                  Color: <span className="font-normal text-[#6B6560]">{selectedColor || product.colors[0]}</span>
+                </p>
                 <div className="flex gap-2">
                   {product.colors.map((color) => (
                     <button
@@ -263,7 +272,9 @@ export function ProductPage() {
 
             {product.sizes.length > 1 && (
               <div>
-                <p className="text-sm font-semibold text-[#2C2C2C] mb-2">Size: <span className="font-normal text-[#6B6560]">{selectedSize || product.sizes[0]}</span></p>
+                <p className="text-sm font-semibold text-[#2C2C2C] mb-2">
+                  Size: <span className="font-normal text-[#6B6560]">{selectedSize || product.sizes[0]}</span>
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
                     <button
@@ -305,9 +316,7 @@ export function ProductPage() {
               <button
                 onClick={handleAddToCart}
                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                  addedToCart
-                    ? 'bg-[#2E7D32] text-white'
-                    : 'bg-[#6B1D1D] text-white hover:bg-[#4A1212]'
+                  addedToCart ? 'bg-[#2E7D32] text-white' : 'bg-[#6B1D1D] text-white hover:bg-[#4A1212]'
                 }`}
               >
                 {addedToCart ? (
@@ -367,6 +376,7 @@ export function ProductPage() {
           </div>
         </div>
 
+        {/* Tabs */}
         <div className="mt-12">
           <div className="flex gap-6 border-b border-gray-200 mb-6">
             {(['details', 'care', 'reviews'] as const).map((tab) => (
@@ -378,9 +388,7 @@ export function ProductPage() {
                 }`}
               >
                 {tab}
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#6B1D1D]" />
-                )}
+                {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#6B1D1D]" />}
               </button>
             ))}
           </div>
@@ -486,6 +494,7 @@ export function ProductPage() {
           )}
         </div>
 
+        {/* Related products */}
         {related.length > 0 && (
           <div className="mt-16">
             <div className="flex items-center justify-between mb-8">
@@ -507,3 +516,4 @@ export function ProductPage() {
     </div>
   );
 }
+

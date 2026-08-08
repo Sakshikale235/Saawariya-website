@@ -5,6 +5,8 @@ import { supabase } from '../supabaseClient';
 type SupabaseAuthContextType = {
   session: Session | null;
   loading: boolean;
+  role: string | null;
+  roleLoading: boolean;
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -14,6 +16,8 @@ const SupabaseAuthContext = createContext<SupabaseAuthContextType | undefined>(u
 export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(false);
 
   const refreshSession = useMemo(() => {
     return async () => {
@@ -27,6 +31,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return async () => {
       // Clear local state immediately to avoid stale UI while signOut propagates.
       setSession(null);
+      setRole(null);
+      setRoleLoading(false);
 
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -38,7 +44,41 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       await refreshSession();
 
     };
-  }, []);
+  }, [refreshSession]);
+
+  useEffect(() => {
+    if (!session) {
+      setRole(null);
+      setRoleLoading(false);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      setRoleLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (active) {
+          setRole(data?.role ?? null);
+        }
+      } catch (err) {
+        console.error('Error fetching role:', err);
+        if (active) setRole(null);
+      } finally {
+        if (active) setRoleLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   useEffect(() => {
     let mounted = true;
@@ -66,6 +106,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const value: SupabaseAuthContextType = {
     session,
     loading,
+    role,
+    roleLoading,
     refreshSession,
     logout,
   };

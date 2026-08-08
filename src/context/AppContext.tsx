@@ -26,6 +26,7 @@ interface AppContextType {
   productId: string | null;
   categoryFilter: string | null;
   navigate: (page: Page, productId?: string, category?: string | null) => void;
+  setCategoryFilter: (cat: string | null) => void;
   cart: CartItem[];
   addToCart: (product: Product, size: string, color: string, quantity?: number) => void;
   removeFromCart: (productId: string, size: string, color: string) => void;
@@ -302,8 +303,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         page,
         productId,
-        categoryFilter,
+categoryFilter,
         navigate,
+        setCategoryFilter,
         cart,
         addToCart,
         removeFromCart,

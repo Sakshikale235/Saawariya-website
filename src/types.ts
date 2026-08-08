@@ -55,7 +55,16 @@ export type Page =
   | 'reset_password'
   | 'email_verification'
   | 'addresses'
-  | 'loading';
+  | 'loading'
+  | 'admin/dashboard'
+  | 'admin/products'
+  | 'admin/categories'
+  | 'admin/orders'
+  | 'admin/hero-banners'
+  | 'admin/homepage'
+  | 'admin/users'
+  | 'admin/settings'
+  | 'admin/login';
 
 export interface AppState {
   page: Page;

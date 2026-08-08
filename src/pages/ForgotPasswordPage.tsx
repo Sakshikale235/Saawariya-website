@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../components/AuthLayout';
 import { supabase } from '../supabaseClient';
-import { useApp } from '../context/AppContext';
 
 export function ForgotPasswordPage() {
-  const { navigate } = useApp();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -69,7 +69,7 @@ export function ForgotPasswordPage() {
 
         <button
           type="button"
-          onClick={() => navigate('login')}
+          onClick={() => navigate('/login')}
           className="w-full text-center text-xs text-[#6B6560] hover:underline"
         >
           Back to Login
@@ -78,5 +78,3 @@ export function ForgotPasswordPage() {
     </AuthLayout>
   );
 }
-
-

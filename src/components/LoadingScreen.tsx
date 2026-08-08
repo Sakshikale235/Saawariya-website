@@ -1,8 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export function LoadingScreen() {
-  const { navigate } = useApp();
+
+  const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
 

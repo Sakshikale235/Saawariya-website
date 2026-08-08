@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../components/AuthLayout';
 import { supabase } from '../supabaseClient';
-import { useApp } from '../context/AppContext';
 
 export function ResetPasswordPage() {
-  const { navigate } = useApp();
+  const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ export function ResetPasswordPage() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Password updated successfully.' });
-      navigate('login');
+      navigate('/login');
     } catch (e) {
       setMessage({ type: 'error', text: (e as Error).message || 'Failed to update password.' });
     } finally {
@@ -98,7 +98,7 @@ export function ResetPasswordPage() {
 
         <button
           type="button"
-          onClick={() => navigate('login')}
+          onClick={() => navigate('/login')}
           className="w-full text-center text-xs text-[#6B6560] hover:underline"
         >
           Back to Login
@@ -107,5 +107,3 @@ export function ResetPasswordPage() {
     </AuthLayout>
   );
 }
-
-

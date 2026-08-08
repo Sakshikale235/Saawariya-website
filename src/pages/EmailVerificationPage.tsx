@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../components/AuthLayout';
 import { supabase } from '../supabaseClient';
-import { useApp } from '../context/AppContext';
 
 export function EmailVerificationPage() {
-  const { navigate } = useApp();
+  const navigate = useNavigate();
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +17,7 @@ export function EmailVerificationPage() {
 
         if (data.session?.user) {
           setMessage({ type: 'success', text: 'Email verified. Welcome!' });
-          navigate('home');
+          navigate('/');
         } else {
           setMessage({
             type: 'success',
@@ -69,7 +69,7 @@ export function EmailVerificationPage() {
         <button
           className="w-full bg-[#6B1D1D] text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-[#4A1212] transition-colors disabled:opacity-60"
           type="button"
-          onClick={() => navigate('login')}
+          onClick={() => navigate('/login')}
         >
           {loading ? 'Please wait' : 'Verify'}
         </button>
@@ -77,5 +77,3 @@ export function EmailVerificationPage() {
     </AuthLayout>
   );
 }
-
-

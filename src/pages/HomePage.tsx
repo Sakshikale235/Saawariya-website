@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Star, Truck, RotateCcw, Shield, CreditCard, IndianRupee, Heart } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HeroSection } from '../components/HeroSection';
@@ -9,7 +10,8 @@ import { fetchFeaturedProducts, fetchBestsellers } from '../api/products';
 import type { Product } from '../types';
 
 export function HomePage() {
-  const { navigate } = useApp();
+  const navigate = useNavigate();
+  const { setCategoryFilter } = useApp();
   const [featured, setFeatured] = useState<Product[]>([]);
   const [bestsellers, setBestsellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +102,10 @@ export function HomePage() {
             {categories.filter(cat => cat.id === 'men' || cat.id === 'women' || cat.id === 'collections').map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => navigate('shop', undefined, cat.id)}
+                onClick={() => {
+                  setCategoryFilter(cat.id);
+                  navigate('/shop');
+                }}
                 className="group flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-[#F7F2E8] transition-all duration-300"
               >
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-[#D4C5A9] group-hover:border-[#6B1D1D] flex items-center justify-center transition-colors duration-300 bg-white">
@@ -216,7 +221,7 @@ export function HomePage() {
                   <DividerLine className="justify-start" />
                 </div>
                 <button
-                  onClick={() => navigate('shop')}
+                  onClick={() => navigate('/shop')}
                   className="text-sm font-medium text-[#6B1D1D] hover:text-[#4A1212] transition-colors flex items-center gap-1"
                 >
                   View All <ChevronRight size={16} />
@@ -240,7 +245,7 @@ export function HomePage() {
                   <DividerLine className="justify-start" />
                 </div>
                 <button
-                  onClick={() => navigate('shop')}
+                  onClick={() => navigate('/shop')}
                   className="text-sm font-medium text-[#6B1D1D] hover:text-[#4A1212] transition-colors flex items-center gap-1"
                 >
                   View All <ChevronRight size={16} />
@@ -268,7 +273,7 @@ export function HomePage() {
                     Festive Collection 2024
                   </h3>
                   <button
-                    onClick={() => navigate('shop')}
+                    onClick={() => navigate('/shop')}
                     className="bg-white text-[#6B1D1D] px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#6B1D1D] hover:text-white transition-colors"
                   >
                     Shop Collection

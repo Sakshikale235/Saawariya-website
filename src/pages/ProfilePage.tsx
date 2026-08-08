@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Heart, MapPin, Package, ShoppingBag } from 'lucide-react';
-
-import { useApp } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '../context/SupabaseAuthContext';
 
 type Gender = 'male' | 'female' | 'other' | '';
@@ -23,7 +22,7 @@ type FormState = {
 };
 
 export function ProfilePage() {
-  const { navigate } = useApp();
+  const navigate = useNavigate();
   const { session, loading: authLoading, logout } = useSupabaseAuth();
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -247,7 +246,7 @@ export function ProfilePage() {
         <div className="text-center max-w-md">
           <p className="text-sm text-[#6B6560] mb-4">Please log in to view your account.</p>
           <button
-            onClick={() => navigate('login')}
+            onClick={() => navigate('/login')}
             className="bg-[#6B1D1D] text-white px-8 py-3 rounded-lg text-sm font-semibold hover:bg-[#4A1212] transition-colors"
           >
             Go to Login
@@ -264,7 +263,9 @@ export function ProfilePage() {
           <h1 className="text-3xl font-bold text-[#2C2C2C]" style={{ fontFamily: "'Playfair Display', serif" }}>
             My Account
           </h1>
-          <p className="text-sm text-[#6B6560] mt-2">{loading ? 'Loading your profile...' : 'Manage your personal information'}</p>
+          <p className="text-sm text-[#6B6560] mt-2">
+            {loading ? 'Loading your profile...' : 'Manage your personal information'}
+          </p>
         </div>
       </div>
 
@@ -350,7 +351,7 @@ export function ProfilePage() {
                     onClick={async () => {
                       setMessage(null);
                       await logout();
-                      navigate('home');
+                      navigate('/');
                     }}
                     className="bg-[#6B1D1D] text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#4A1212] transition-colors"
                     disabled={saving}
@@ -367,10 +368,10 @@ export function ProfilePage() {
               <p className="text-[#2C2C2C] font-medium">More</p>
               <p className="text-xs text-[#6B6560] mt-1">Coming soon:</p>
 
-                <div className="mt-5 space-y-3">
+              <div className="mt-5 space-y-3">
                 <button
                   type="button"
-                  onClick={() => navigate('addresses')}
+                  onClick={() => navigate('/addresses')}
                   className="w-full text-left flex items-center gap-3 p-4 rounded-xl bg-[#F7F2E8] hover:bg-[#EDE0C8] transition-colors"
                   data-testid="address-book-button"
                 >
@@ -407,7 +408,7 @@ export function ProfilePage() {
               </div>
 
               <div className="mt-5 text-xs text-[#6B6560]">
-                Tip: You can edit your details using the “Edit Profile” button.
+                Tip: You can edit your details using the &ldquo;Edit Profile&rdquo; button.
               </div>
             </div>
 

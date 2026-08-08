@@ -1,11 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../components/AuthLayout';
 import { supabase } from '../supabaseClient';
 
-import { useApp } from '../context/AppContext';
-
 export function SignupPage() {
-  const { navigate } = useApp();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -123,7 +122,7 @@ export function SignupPage() {
 
         <button
           type="button"
-          onClick={() => navigate('login')}
+          onClick={() => navigate('/login')}
           className="w-full text-center text-xs text-[#6B6560] hover:underline"
         >
           Already have an account? Login
@@ -132,4 +131,3 @@ export function SignupPage() {
     </AuthLayout>
   );
 }
-
